@@ -7,11 +7,14 @@ Imports vdEntities = VectorDraw.Professional.vdCollections.vdEntities
 
 
 Public Class Form1
+
     WithEvents Basedoc As VectorDraw.Professional.Control.VectorDrawBaseControl
     Dim WithEvents Doc As VectorDraw.Professional.vdObjects.vdDocument
     Dim ShowActionEntities As Boolean
     Dim GravityMod As Boolean
     Private MovingCtrl As MovingController
+    Dim TextMassage As String
+
 
     Private Sub Form1_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Load
         Doc = VdFramedControl.BaseControl.ActiveDocument
@@ -24,10 +27,12 @@ Public Class Form1
 
 
 
-
     Private Sub Basedoc_vdMouseDown(ByVal e As MouseEventArgs, ByRef cancel As Boolean) Handles Basedoc.vdMouseDown
+
         If e.Button <> MouseButtons.Left Then Return
         If (Doc.CommandAction.OpenLoops > 0) Then Return
+
+
         Dim gpt As gPoint = Doc.ActiveLayOut.ActiveActionRender.World2Pixelmatrix.Transform(Doc.ActiveLayOut.OverAllActiveAction.MouseLocation)
         Dim userpt As New POINT(CInt(gpt.x), CInt(gpt.y))
         Using fig As vdFigure = Doc.ActiveLayOut.GetEntityFromPoint(userpt, Doc.ActiveLayOut.ActiveActionRender.GlobalProperties.PickSize, False)
@@ -35,11 +40,22 @@ Public Class Form1
                 Dim chosenBlock = CType(fig, vdInsert)
                 Dim selection As New vdSelection()
                 selection.Add(chosenBlock)
+
+
+                If (CheckBox_Delete.Checked) Then
+                    Doc.ActiveLayOut.Entities.RemoveItem(chosenBlock) ' Remove the entity
+                    Doc.Redraw(True) ' Refresh the UI to reflect changes
+                    Return
+                End If
+
                 ' Save the initial XYZ position of the chosen block before moving on the top view. It is for Aft view.
                 Dim initialXofAftView As Double = chosenBlock.InsertionPoint.x
                 Dim initialYofAftView As Double = chosenBlock.InsertionPoint.y
                 Dim initialZofAftView As Double = chosenBlock.InsertionPoint.z
 
+
+
+                TextMassage = $"Before moving: X: {chosenBlock.InsertionPoint.x} , Y: {chosenBlock.InsertionPoint.y}, Z: {chosenBlock.InsertionPoint.z}"
 
                 Doc.CommandAction.CmdMove(selection, chosenBlock.InsertionPoint, Nothing)
                 ' If GravityMod is True, get the adjusted Y position using GetGravityPoint
@@ -48,11 +64,14 @@ Public Class Form1
                     chosenBlock.InsertionPoint = New gPoint(chosenBlock.InsertionPoint.x, adjustedY, 0)  ' Update the Y position
                 End If
 
-                MovingCtrl.moveMirrorBlocks(chosenBlock, initialXofAftView, initialYofAftView, initialZofAftView)
-
-                Doc.Redraw(True)
-
+                If Not btnMirrirOff.Checked Then
+                    MovingCtrl.moveMirrorBlocks(chosenBlock, initialXofAftView, initialYofAftView, initialZofAftView)
+                    TextMassage += $"{Environment.NewLine} After moving: X: {chosenBlock.InsertionPoint.x}, Y: {chosenBlock.InsertionPoint.y}, Z: {chosenBlock.InsertionPoint.z}, {Environment.NewLine}{MovingCtrl.MessageBoxText()}"
+                    massageBox.Text = TextMassage
+                    Doc.Redraw(True)
+                End If
             End If
+
         End Using
     End Sub
 
@@ -62,13 +81,13 @@ Public Class Form1
         Dim cargoResultY As Double = cargo.BoundingBox.LowerRight.y
         Dim YList As New List(Of Double) ' create list of double
         Dim entities As vdEntities = Doc.ActiveLayOut.Entities
-        Debug.WriteLine("cargoResultY = " + cargoResultY.ToString)
+
         'Loop through all entities in the draw.
         For Each entity As vdFigure In entities
             Dim tempYOfEntity As Double = entity.BoundingBox.UpperLeft.y
             If ToolsUtilites.StartsWithS(entity.Layer.Name.ToString) AndAlso entity.BoundingBox IsNot Nothing AndAlso tempYOfEntity <= cargoResultY Then
                 YList.Add(tempYOfEntity)
-                Debug.WriteLine(tempYOfEntity.ToString)
+
             End If
         Next
         Dim DistanceToNextBody As Double = Double.MaxValue
@@ -132,6 +151,37 @@ Public Class Form1
         Else
             GravityMod = True
         End If
+
+    End Sub
+
+    Private Sub massageBox_TextChanged(sender As Object, e As EventArgs) Handles massageBox.TextChanged
+        ' Disable the event temporarily to prevent feedback loop
+        RemoveHandler massageBox.TextChanged, AddressOf massageBox_TextChanged
+        massageBox.Text = TextMassage
+        ' Re-enable the event after updating the text
+        AddHandler massageBox.TextChanged, AddressOf massageBox_TextChanged
+    End Sub
+
+    Private Sub btnMirrirOff_CheckedChanged(sender As Object, e As EventArgs) Handles btnMirrirOff.CheckedChanged
+
+    End Sub
+
+    Private Sub Button_Undo_Click(sender As Object, e As EventArgs) Handles Button_Undo.Click
+        Doc.CommandAction.Undo("")
+    End Sub
+
+    Private Sub Button_Redo_Click(sender As Object, e As EventArgs) Handles Button_Redo.Click
+        Doc.CommandAction.Redo()
+    End Sub
+
+
+
+
+    Private Sub Button_Print_Click(sender As Object, e As EventArgs) Handles Button_Print.Click
+        Doc.CommandAction.CmdPrintDialog(Nothing, Nothing)
+    End Sub
+
+    Private Sub CheckBox1_CheckedChanged(sender As Object, e As EventArgs) Handles CheckBox_Delete.CheckedChanged
 
     End Sub
 End Class

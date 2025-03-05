@@ -2,6 +2,9 @@
 Imports vdInsert = VectorDraw.Professional.vdFigures.vdInsert
 Imports vdFigure = VectorDraw.Professional.vdPrimaries.vdFigure
 Imports vdEntities = VectorDraw.Professional.vdCollections.vdEntities
+Imports VectorDraw.Professional.vdObjects
+
+
 
 Public Class MovingController
 
@@ -9,18 +12,29 @@ Public Class MovingController
 
     Private WithEvents Doc As VectorDraw.Professional.vdObjects.vdDocument
 
-    Dim SideViewEntiti As vdInsert
-    Dim TopWDViewEntiti As vdInsert
-    Dim TopTDViewEntiti As vdInsert
-    Dim TopTTViewEntiti As vdInsert
-    Dim AftViewEntiti As vdInsert
+    Dim SideViewEntity As vdInsert
+    Dim TopWDViewEntity As vdInsert
+    Dim TopTDViewEntity As vdInsert
+    Dim TopTTViewEntity As vdInsert
+    Dim AftViewEntity As vdInsert
 
+    Dim P180 As vdInsert
+    Dim C1P180 As vdInsert
+    Dim C2P180 As vdInsert
+
+
+    Dim TopWDAltitudeMarker As Double
+    Dim TopTDAltitudeMarker As Double
+    Dim TopTTAltitudeMarker As Double
+
+
+    Dim TowViewMassage As String
     Dim initialX As Double
     Dim initialY As Double
     Dim initialZ As Double
 
     Dim movedBlock As vdInsert
-    Dim AllEntities As vdEntities
+    Dim AllEntityes As vdEntities
 
 
     ' Constructor to initialize with a document reference
@@ -38,41 +52,197 @@ Public Class MovingController
         ' getting the Layer number from the moved block's name
         Dim movedLayerNumber As Integer = ToolsUtilites.getLayerNumber(movedBlock.Layer.Name)
 
-        Me.AllEntities = Doc.ActiveLayOut.Entities
+        Me.AllEntityes = Doc.ActiveLayOut.Entities
 
-        For Each otherViewsEntity As vdFigure In AllEntities
+        For Each otherViewsEntity As vdFigure In AllEntityes
             If TypeOf otherViewsEntity Is vdInsert Then
-                Dim otherViewsTemp As vdInsert = CType(otherViewsEntity, vdInsert)
+                Dim tempEntity As vdInsert = CType(otherViewsEntity, vdInsert)
+
+                Select Case True
+                    Case ToolsUtilites.topWDAltitudeMarkerRecognizer(tempEntity.Layer.ToString)
+                        TopWDAltitudeMarker = tempEntity.InsertionPoint.z
+
+                    Case ToolsUtilites.topTDAltitudeMarkerRecognizer(tempEntity.Layer.ToString)
+                        TopTDAltitudeMarker = tempEntity.InsertionPoint.z
+
+                    Case ToolsUtilites.topTTAltitudeMarkerRecognizer(tempEntity.Layer.ToString)
+                        TopTTAltitudeMarker = tempEntity.InsertionPoint.z
+
+                    Case ToolsUtilites.topP180Recognizer(tempEntity.Layer.Name)
+                        P180 = tempEntity
+
+                    Case ToolsUtilites.topC1P180Recognizer(tempEntity.Layer.Name)
+                        C1P180 = tempEntity
+
+                    Case ToolsUtilites.topC2P180Recognizer(tempEntity.Layer.Name)
+                        C2P180 = tempEntity
+
+                End Select
+
+
+
                 ' * For Each entity getting Layer number
-                Dim otherViewsEntityLayerNumber As Integer = ToolsUtilites.getLayerNumber(otherViewsTemp.Layer.Name)
+                Dim otherViewsEntityLayerNumber As Integer = ToolsUtilites.getLayerNumber(tempEntity.Layer.Name)
                 If otherViewsEntity.Layer.Name.Contains(LayerNumber) AndAlso otherViewsEntityLayerNumber = movedLayerNumber Then
+
                     Select Case True
-                        Case ToolsUtilites.StartsWithSU(otherViewsTemp.Layer.ToString)
-                            SideViewEntiti = otherViewsTemp
-                            Debug.WriteLine("Side View Found: " & otherViewsTemp.Layer.Name)
-                        Case ToolsUtilites.StartsWithU(otherViewsTemp.Layer.ToString)
-                            TopWDViewEntiti = otherViewsTemp
-                            Debug.WriteLine("Top WD View Found: " & otherViewsTemp.Layer.Name)
-                        Case ToolsUtilites.StartsWithC1U(otherViewsTemp.Layer.ToString)
-                            TopTDViewEntiti = otherViewsTemp
-                            Debug.WriteLine("Top TD View Found: " & otherViewsTemp.Layer.Name)
-                        Case ToolsUtilites.StartsWithC2U(otherViewsTemp.Layer.ToString)
-                            TopTTViewEntiti = otherViewsTemp
-                            Debug.WriteLine("Top TT View Found: " & otherViewsTemp.Layer.Name)
-                        Case ToolsUtilites.StartsWithAU(otherViewsTemp.Layer.ToString)
-                            AftViewEntiti = otherViewsTemp
-                            Debug.WriteLine("Aft View Found: " & otherViewsTemp.Layer.Name)
+                        Case ToolsUtilites.StartsWithSU(tempEntity.Layer.ToString)
+                            SideViewEntity = tempEntity
+
+                        Case ToolsUtilites.StartsWithU(tempEntity.Layer.ToString)
+                            TopWDViewEntity = tempEntity
+
+                        Case ToolsUtilites.StartsWithC1U(tempEntity.Layer.ToString)
+                            TopTDViewEntity = tempEntity
+
+                        Case ToolsUtilites.StartsWithC2U(tempEntity.Layer.ToString)
+                            TopTTViewEntity = tempEntity
+
+                        Case ToolsUtilites.StartsWithAU(tempEntity.Layer.ToString)
+                            AftViewEntity = tempEntity
+
+
                         Case Else
-                            Debug.WriteLine("No matching view found for: " & otherViewsTemp.Layer.Name)
+
                     End Select
 
                 End If
             End If
         Next
 
+
+
+        If TopTDViewEntity Is Nothing AndAlso TopWDViewEntity IsNot Nothing Then
+            TopTDViewEntity = TopWDViewEntity
+            ' Check if the new layer already exists
+            Dim newLayerTempName As String = "C1" + TopWDViewEntity.Layer.Name
+            Dim TopTDViewEntitynewLayer As VectorDraw.Professional.vdPrimaries.vdLayer = Doc.Layers.FindName(newLayerTempName)
+
+            ' If the layer does not exist, create a new one with the same properties
+            If TopTDViewEntitynewLayer Is Nothing Then
+                TopTDViewEntitynewLayer = New VectorDraw.Professional.vdPrimaries.vdLayer(Doc, newLayerTempName)
+
+                ' Copy properties from TopWDViewEntity's Layer
+                TopTDViewEntitynewLayer.PenColor = TopWDViewEntity.Layer.PenColor
+                TopTDViewEntitynewLayer.LineType = TopWDViewEntity.Layer.LineType
+                TopTDViewEntitynewLayer.Frozen = TopWDViewEntity.Layer.Frozen
+                TopTDViewEntitynewLayer.On = TopWDViewEntity.Layer.On
+                TopTDViewEntitynewLayer.LineWeight = TopWDViewEntity.Layer.LineWeight
+
+                ' Add the new layer to the document
+                Doc.Layers.AddItem(TopTDViewEntitynewLayer)
+            End If
+
+
+            'Dim clonedBlock As VectorDraw.Professional.vdPrimaries.vdInsert = CType(TopWDViewEntity.Clone(Doc), vdInsert)
+            ' If clonedBlock.Block IsNot Nothing Then
+            'clonedBlock.Block.Update()
+            'End If
+            ' Clone the entity first before assigning the layer
+            TopTDViewEntity = CType(TopWDViewEntity.Clone(Doc), vdInsert)
+            TopTDViewEntity.Layer = TopTDViewEntitynewLayer  ' Assign the new layer
+
+            ' Add the cloned entity to the document
+            Doc.ActiveLayOut.Entities.AddItem(TopTDViewEntity)
+
+            ' Debugging message
+            Debug.WriteLine("New layer TD assigned: " & TopTDViewEntity.Layer.Name)
+
+            ' Refresh document
+
+
+
+            Dim deltaYOfWD As Double
+            deltaYOfWD = P180.InsertionPoint.y - TopWDViewEntity.InsertionPoint.y
+            TopTDViewEntity.InsertionPoint = New gPoint(
+                  SideViewEntity.InsertionPoint.x,
+                  C1P180.InsertionPoint.y + deltaYOfWD,
+                  TopWDViewEntity.InsertionPoint.z)
+
+            TopTDViewEntity.Layer.Frozen = False
+            TopTDViewEntity.Layer.On = True
+            TopTDViewEntity.Update()
+
+            Doc.Redraw(True)
+
+        End If
+
+        If TopTTViewEntity Is Nothing AndAlso TopWDViewEntity IsNot Nothing Then
+            TopTTViewEntity = TopWDViewEntity
+            ' Check if the new layer already exists
+            Dim newLayerName As String = "C2" + TopWDViewEntity.Layer.Name
+            Dim TopTTViewEntitynewLayer As VectorDraw.Professional.vdPrimaries.vdLayer = Doc.Layers.FindName(newLayerName)
+
+            ' If the layer does not exist, create a new one with the same properties
+            If TopTTViewEntitynewLayer Is Nothing Then
+                TopTTViewEntitynewLayer = New VectorDraw.Professional.vdPrimaries.vdLayer(Doc, newLayerName)
+
+                ' Copy properties from TopWDViewEntity's Layer
+                TopTTViewEntitynewLayer.PenColor = TopWDViewEntity.Layer.PenColor
+                TopTTViewEntitynewLayer.LineType = TopWDViewEntity.Layer.LineType
+                TopTTViewEntitynewLayer.Frozen = TopWDViewEntity.Layer.Frozen
+                TopTTViewEntitynewLayer.On = TopWDViewEntity.Layer.On
+                TopTTViewEntitynewLayer.LineWeight = TopWDViewEntity.Layer.LineWeight
+
+                ' Add the new layer to the document
+                Doc.Layers.AddItem(TopTTViewEntitynewLayer)
+            End If
+
+            ' Clone the entity first before assigning the layer
+            TopTDViewEntity = CType(TopWDViewEntity.Clone(Doc), vdInsert)
+            TopTDViewEntity.Layer = TopTTViewEntitynewLayer  ' Assign the new layer
+
+            ' Add the cloned entity to the document
+            Doc.ActiveLayOut.Entities.AddItem(TopTDViewEntity)
+
+            ' Debugging message
+            Debug.WriteLine("New layer TT assigned: " & TopTTViewEntity.Layer.Name)
+
+
+            ' Refresh document
+
+
+
+            Dim deltaYOfWD As Double
+            deltaYOfWD = P180.InsertionPoint.y - TopWDViewEntity.InsertionPoint.y
+            TopTDViewEntity.InsertionPoint = New gPoint(
+                  SideViewEntity.InsertionPoint.x,
+                  C2P180.InsertionPoint.y + deltaYOfWD,
+                  TopWDViewEntity.InsertionPoint.z)
+
+            TopTDViewEntity.Layer.Frozen = False
+            TopTDViewEntity.Layer.On = True
+            TopTDViewEntity.Update()
+
+            Doc.Redraw(True)
+
+
+        End If
+
+        Doc.Redraw(True) ' Refresh the drawing after adding new entities
+
+        Debug.WriteLine("TopWDAltitudeMarker = " + TopWDAltitudeMarker.ToString)
+        Debug.WriteLine("TopTDAltitudeMarker = " + TopTDAltitudeMarker.ToString)
+        Debug.WriteLine("TopTTAltitudeMarker = " + TopTTAltitudeMarker.ToString)
+        Debug.WriteLine("P180 was ok\ " + P180.Layer.Name)
+        Debug.WriteLine("C1P180 was ok\ " + C1P180.Layer.Name)
+        Debug.WriteLine("C2P180 was ok\ " + C2P180.Layer.Name)
+        Debug.WriteLine("Side Layer name is" + SideViewEntity.Layer.Name)
+        Debug.WriteLine("TopWD Layer name is" + TopWDViewEntity.Layer.Name)
+        Debug.WriteLine("TopTD Layer name is" + TopTDViewEntity.Layer.Name)
+        Debug.WriteLine("TopTT Layer name is" + TopTTViewEntity.Layer.Name)
+        Debug.WriteLine("Aft Layer name is" + AftViewEntity.Layer.Name)
+
+
+
+
+
     End Sub
 
-    Public Sub moveMirrorBlocksOpt2(movedBlock As vdInsert, initialX As Double, initialY As Double, initialZ As Double)
+
+
+
+    Public Sub moveMirrorBlocks(movedBlock As vdInsert, initialX As Double, initialY As Double, initialZ As Double)
         intializeViewsEntities(movedBlock)
 
         Me.initialX = initialX
@@ -80,15 +250,15 @@ Public Class MovingController
         Me.initialZ = initialZ
 
 
-        If movedBlock.Equals(TopWDViewEntiti) Then
+        If movedBlock.Equals(TopWDViewEntity) Then
             TopWDMoving()
-        ElseIf movedBlock.Equals(TopTDViewEntiti) Then
+        ElseIf movedBlock.Equals(TopTDViewEntity) Then
             TopTDMoving()
-        ElseIf movedBlock.Equals(TopTTViewEntiti) Then
+        ElseIf movedBlock.Equals(TopTTViewEntity) Then
             TopTTMoving()
-        ElseIf movedBlock.Equals(SideViewEntiti) Then
+        ElseIf movedBlock.Equals(SideViewEntity) Then
             SideViewMoving()
-        ElseIf movedBlock.Equals(AftViewEntiti) Then
+        ElseIf movedBlock.Equals(AftViewEntity) Then
             AftViewMoving()
         End If
 
@@ -97,54 +267,141 @@ Public Class MovingController
     End Sub
 
     Private Sub VisibleOnForAllViews()
+        'Debug.WriteLine("x:" + movedBlock.InsertionPoint.x.ToString + " y:" + movedBlock.InsertionPoint.y.ToString + " z:" + movedBlock.InsertionPoint.z.ToString)
+        Try
+            If SideViewEntity IsNot Nothing AndAlso SideViewEntity.Layer IsNot Nothing Then
+                SideViewEntity.Layer.Frozen = False
+                SideViewEntity.Layer.On = True
+                If SideViewEntity.Layer.Document IsNot Nothing Then SideViewEntity.Layer.Document.Redraw(True)
+            End If
+            'start
+            'WD
+            If TopWDViewEntity IsNot Nothing AndAlso TopWDViewEntity.Layer IsNot Nothing AndAlso ToolsUtilites.altitudeComperator(TopWDViewEntity.InsertionPoint.z, TopWDAltitudeMarker) Then
 
-        SideViewEntiti.Layer.Frozen = False
-        TopWDViewEntiti.Layer.Frozen = False
-        TopTDViewEntiti.Layer.Frozen = False
-        TopTTViewEntiti.Layer.Frozen = False
-        AftViewEntiti.Layer.Frozen = False
+                TopWDViewEntity.Layer.Frozen = False
+                TopWDViewEntity.Layer.On = True
+                TopWDViewEntity.FadeEffect = 0
+                TopWDViewEntity.visibility = False
 
-        SideViewEntiti.Layer.On = True
-        TopWDViewEntiti.Layer.On = True
-        TopTDViewEntiti.Layer.On = True
-        TopTTViewEntiti.Layer.On = True
-        AftViewEntiti.Layer.On = True
+                TopTDViewEntity.Layer.Frozen = True
+                TopTDViewEntity.Layer.On = False
+                TopTDViewEntity.visibility = True
 
-        SideViewEntiti.Layer.Document.Redraw(True)
-        TopWDViewEntiti.Layer.Document.Redraw(True)
-        TopTDViewEntiti.Layer.Document.Redraw(True)
-        TopTTViewEntiti.Layer.Document.Redraw(True)
-        AftViewEntiti.Layer.Document.Redraw(True)
+                TopTTViewEntity.Layer.Frozen = True
+                TopTTViewEntity.Layer.On = False
+                TopTTViewEntity.visibility = True
 
+                TowViewMassage = "WD -> on; TD -> off; TT -> off."
+
+            ElseIf TopWDViewEntity IsNot Nothing AndAlso TopWDViewEntity.Layer IsNot Nothing AndAlso Not ToolsUtilites.altitudeComperator(TopWDViewEntity.InsertionPoint.z, TopWDAltitudeMarker) Then
+                TopWDViewEntity.Layer.Frozen = True
+                TopWDViewEntity.Layer.On = False
+                TopWDViewEntity.visibility = True
+            End If
+            If TopWDViewEntity.Layer.Document IsNot Nothing Then TopWDViewEntity.Layer.Document.Redraw(True)
+
+            'TD
+            If TopTDViewEntity IsNot Nothing AndAlso TopTDViewEntity.Layer IsNot Nothing AndAlso ToolsUtilites.altitudeComperator(TopTDViewEntity.InsertionPoint.z, TopTDAltitudeMarker) AndAlso Not ToolsUtilites.altitudeComperator(TopTDViewEntity.InsertionPoint.z, TopWDAltitudeMarker) Then
+                TopTDViewEntity.Layer.Frozen = False
+                TopTDViewEntity.Layer.On = True
+                TopTDViewEntity.visibility = False
+                TopTDViewEntity.FadeEffect = 0
+                TopTDViewEntity.TransparencyMethod = vdFigure.TransparencyMethodEnum.Default
+
+                TopWDViewEntity.Layer.Frozen = True
+                TopWDViewEntity.Layer.On = False
+                TopWDViewEntity.visibility = True
+
+                TopTTViewEntity.Layer.Frozen = True
+                TopTTViewEntity.Layer.On = False
+                TopTTViewEntity.visibility = True
+
+                TowViewMassage = "WD -> off; TD -> on; TT -> off; "
+                TopTDViewEntity.Layer.Document.Redraw(True)
+
+            ElseIf TopTDViewEntity IsNot Nothing AndAlso TopTDViewEntity.Layer IsNot Nothing AndAlso Not ToolsUtilites.altitudeComperator(TopTDViewEntity.InsertionPoint.z, TopTDAltitudeMarker) AndAlso Not ToolsUtilites.altitudeComperator(TopTDViewEntity.InsertionPoint.z, TopWDAltitudeMarker) Then
+                TopTDViewEntity.Layer.Frozen = True
+                TopTDViewEntity.Layer.On = False
+                TopTDViewEntity.visibility = True
+            End If
+            If TopTDViewEntity.Layer.Document IsNot Nothing Then TopTDViewEntity.Layer.Document.Redraw(True)
+
+
+            'TT
+
+            If TopTTViewEntity IsNot Nothing AndAlso TopTTViewEntity.Layer IsNot Nothing AndAlso ToolsUtilites.altitudeComperator(TopTTViewEntity.InsertionPoint.z, TopTTAltitudeMarker) AndAlso Not ToolsUtilites.altitudeComperator(TopTTViewEntity.InsertionPoint.z, TopTDAltitudeMarker) Then
+                TopTTViewEntity.Layer.Frozen = False
+                TopTTViewEntity.Layer.On = True
+                TopTTViewEntity.FadeEffect = 0
+                TopTTViewEntity.visibility = False
+
+                TopWDViewEntity.Layer.Frozen = True
+                TopWDViewEntity.Layer.On = False
+                TopWDViewEntity.visibility = True
+
+                TopTDViewEntity.Layer.Frozen = True
+                TopTDViewEntity.Layer.On = False
+                TopTDViewEntity.visibility = True
+
+                TowViewMassage = "WD -> off; TD -> off; TT -> on; "
+
+
+            ElseIf TopTTViewEntity IsNot Nothing AndAlso TopTTViewEntity.Layer IsNot Nothing AndAlso ToolsUtilites.altitudeComperator(TopTTViewEntity.InsertionPoint.z, TopTDAltitudeMarker) Then
+                TopTTViewEntity.Layer.Frozen = True
+                TopTTViewEntity.Layer.On = False
+                TopTTViewEntity.visibility = True
+            End If
+            If TopTTViewEntity.Layer.Document IsNot Nothing Then TopTTViewEntity.Layer.Document.Redraw(True)
+            'finish
+
+
+            If AftViewEntity IsNot Nothing AndAlso AftViewEntity.Layer IsNot Nothing Then
+                AftViewEntity.Layer.Frozen = False
+                AftViewEntity.Layer.On = True
+                If AftViewEntity.Layer.Document IsNot Nothing Then AftViewEntity.Layer.Document.Redraw(True)
+            End If
+
+
+
+        Catch ex As Exception
+            ' Log error if needed
+        End Try
     End Sub
+
+
+
+    Public Function MessageBoxText() As String
+        Return TowViewMassage
+    End Function
+
 
     Private Sub AftViewMoving()
         Dim deltaYFromTopView = movedBlock.InsertionPoint.y - initialY
         Dim deltaXFromTopView = movedBlock.InsertionPoint.x - initialX
 
-        SideViewEntiti.InsertionPoint = New gPoint(
-                         SideViewEntiti.InsertionPoint.x,
+        SideViewEntity.InsertionPoint = New gPoint(
+                         SideViewEntity.InsertionPoint.x,
                          movedBlock.InsertionPoint.y,
-                         SideViewEntiti.InsertionPoint.z + deltaXFromTopView)
-        SideViewEntiti.Update()
+                         SideViewEntity.InsertionPoint.z + deltaXFromTopView)
+        SideViewEntity.Update()
 
-        TopWDViewEntiti.InsertionPoint = New gPoint(
-                         TopWDViewEntiti.InsertionPoint.x,
-                         TopWDViewEntiti.InsertionPoint.y + deltaXFromTopView,
-                         TopWDViewEntiti.InsertionPoint.z + deltaYFromTopView)
-        TopWDViewEntiti.Update()
+        TopWDViewEntity.InsertionPoint = New gPoint(
+                         TopWDViewEntity.InsertionPoint.x,
+                         TopWDViewEntity.InsertionPoint.y + deltaXFromTopView,
+                         TopWDViewEntity.InsertionPoint.z + deltaYFromTopView)
+        TopWDViewEntity.Update()
 
-        TopTDViewEntiti.InsertionPoint = New gPoint(
-                      TopTDViewEntiti.InsertionPoint.x,
-                      TopTDViewEntiti.InsertionPoint.y + deltaXFromTopView,
-                      TopTDViewEntiti.InsertionPoint.z + deltaYFromTopView)
-        TopTDViewEntiti.Update()
+        TopTDViewEntity.InsertionPoint = New gPoint(
+                      TopTDViewEntity.InsertionPoint.x,
+                      TopTDViewEntity.InsertionPoint.y + deltaXFromTopView,
+                      TopTDViewEntity.InsertionPoint.z + deltaYFromTopView)
+        TopTDViewEntity.Update()
 
-        TopTTViewEntiti.InsertionPoint = New gPoint(
-                      TopTTViewEntiti.InsertionPoint.x,
-                      TopTTViewEntiti.InsertionPoint.y + deltaXFromTopView,
-                      TopTTViewEntiti.InsertionPoint.z + deltaYFromTopView)
-        TopTTViewEntiti.Update()
+        TopTTViewEntity.InsertionPoint = New gPoint(
+                      TopTTViewEntity.InsertionPoint.x,
+                      TopTTViewEntity.InsertionPoint.y + deltaXFromTopView,
+                      TopTTViewEntity.InsertionPoint.z + deltaYFromTopView)
+        TopTTViewEntity.Update()
 
 
     End Sub
@@ -153,29 +410,29 @@ Public Class MovingController
         Dim deltaYFromTopView = movedBlock.InsertionPoint.y - initialY
         Dim deltaXFromTopView = movedBlock.InsertionPoint.x - initialX
 
-        AftViewEntiti.InsertionPoint = New gPoint(
-                                AftViewEntiti.InsertionPoint.x,
+        AftViewEntity.InsertionPoint = New gPoint(
+                                AftViewEntity.InsertionPoint.x,
                                 movedBlock.InsertionPoint.y,
-                                AftViewEntiti.InsertionPoint.z + deltaXFromTopView)
-        AftViewEntiti.Update()
+                                AftViewEntity.InsertionPoint.z + deltaXFromTopView)
+        AftViewEntity.Update()
 
-        TopWDViewEntiti.InsertionPoint = New gPoint(
+        TopWDViewEntity.InsertionPoint = New gPoint(
                                 movedBlock.InsertionPoint.x,
-                                TopWDViewEntiti.InsertionPoint.y,
-                                TopWDViewEntiti.InsertionPoint.z + deltaYFromTopView)
-        TopWDViewEntiti.Update()
+                                TopWDViewEntity.InsertionPoint.y,
+                                TopWDViewEntity.InsertionPoint.z + deltaYFromTopView)
+        TopWDViewEntity.Update()
 
-        TopTDViewEntiti.InsertionPoint = New gPoint(
+        TopTDViewEntity.InsertionPoint = New gPoint(
                             movedBlock.InsertionPoint.x,
-                            TopTDViewEntiti.InsertionPoint.y,
-                            TopTDViewEntiti.InsertionPoint.z + deltaYFromTopView)
-        TopTDViewEntiti.Update()
+                            TopTDViewEntity.InsertionPoint.y,
+                            TopTDViewEntity.InsertionPoint.z + deltaYFromTopView)
+        TopTDViewEntity.Update()
 
-        TopTTViewEntiti.InsertionPoint = New gPoint(
+        TopTTViewEntity.InsertionPoint = New gPoint(
                            movedBlock.InsertionPoint.x,
-                           TopTTViewEntiti.InsertionPoint.y,
-                           TopTTViewEntiti.InsertionPoint.z + deltaYFromTopView)
-        TopTTViewEntiti.Update()
+                           TopTTViewEntity.InsertionPoint.y,
+                           TopTTViewEntity.InsertionPoint.z + deltaYFromTopView)
+        TopTTViewEntity.Update()
 
 
 
@@ -185,29 +442,29 @@ Public Class MovingController
         Dim deltaXFromTopView = movedBlock.InsertionPoint.x - initialX
         Dim deltaYFromTopView = movedBlock.InsertionPoint.y - initialY
 
-        SideViewEntiti.InsertionPoint = New gPoint(
+        SideViewEntity.InsertionPoint = New gPoint(
                              movedBlock.InsertionPoint.x,
-                             SideViewEntiti.InsertionPoint.y,
-                             SideViewEntiti.InsertionPoint.z + deltaYFromTopView)
-        SideViewEntiti.Update()
+                             SideViewEntity.InsertionPoint.y,
+                             SideViewEntity.InsertionPoint.z + deltaYFromTopView)
+        SideViewEntity.Update()
 
-        AftViewEntiti.InsertionPoint = New gPoint(
-                               AftViewEntiti.InsertionPoint.x + deltaYFromTopView,
-                               AftViewEntiti.InsertionPoint.y,
-                               AftViewEntiti.InsertionPoint.z + deltaXFromTopView)
-        AftViewEntiti.Update()
+        AftViewEntity.InsertionPoint = New gPoint(
+                               AftViewEntity.InsertionPoint.x + deltaYFromTopView,
+                               AftViewEntity.InsertionPoint.y,
+                               AftViewEntity.InsertionPoint.z + deltaXFromTopView)
+        AftViewEntity.Update()
 
-        TopWDViewEntiti.InsertionPoint = New gPoint(
+        TopWDViewEntity.InsertionPoint = New gPoint(
                               movedBlock.InsertionPoint.x,
                               movedBlock.InsertionPoint.y,
-                              TopWDViewEntiti.InsertionPoint.z)
-        TopWDViewEntiti.Update()
+                              TopWDViewEntity.InsertionPoint.z)
+        TopWDViewEntity.Update()
 
-        TopTDViewEntiti.InsertionPoint = New gPoint(
+        TopTDViewEntity.InsertionPoint = New gPoint(
                             movedBlock.InsertionPoint.x,
                             movedBlock.InsertionPoint.y,
-                            TopTTViewEntiti.InsertionPoint.z)
-        TopTDViewEntiti.Update()
+                            TopTTViewEntity.InsertionPoint.z)
+        TopTDViewEntity.Update()
     End Sub
 
     Private Sub TopTDMoving()
@@ -215,29 +472,29 @@ Public Class MovingController
         Dim deltaXFromTopView = movedBlock.InsertionPoint.x - initialX
         Dim deltaYFromTopView = movedBlock.InsertionPoint.y - initialY
 
-        SideViewEntiti.InsertionPoint = New gPoint(
+        SideViewEntity.InsertionPoint = New gPoint(
                              movedBlock.InsertionPoint.x,
-                             SideViewEntiti.InsertionPoint.y,
-                             SideViewEntiti.InsertionPoint.z + deltaYFromTopView)
-        SideViewEntiti.Update()
+                             SideViewEntity.InsertionPoint.y,
+                             SideViewEntity.InsertionPoint.z + deltaYFromTopView)
+        SideViewEntity.Update()
 
-        AftViewEntiti.InsertionPoint = New gPoint(
-                               AftViewEntiti.InsertionPoint.x + deltaYFromTopView,
-                               AftViewEntiti.InsertionPoint.y,
-                               AftViewEntiti.InsertionPoint.z + deltaXFromTopView)
-        AftViewEntiti.Update()
+        AftViewEntity.InsertionPoint = New gPoint(
+                               AftViewEntity.InsertionPoint.x + deltaYFromTopView,
+                               AftViewEntity.InsertionPoint.y,
+                               AftViewEntity.InsertionPoint.z + deltaXFromTopView)
+        AftViewEntity.Update()
 
-        TopWDViewEntiti.InsertionPoint = New gPoint(
+        TopWDViewEntity.InsertionPoint = New gPoint(
                               movedBlock.InsertionPoint.x,
                               movedBlock.InsertionPoint.y,
-                              TopWDViewEntiti.InsertionPoint.z)
-        TopWDViewEntiti.Update()
+                              TopWDViewEntity.InsertionPoint.z)
+        TopWDViewEntity.Update()
 
-        TopTTViewEntiti.InsertionPoint = New gPoint(
+        TopTTViewEntity.InsertionPoint = New gPoint(
                             movedBlock.InsertionPoint.x,
                             movedBlock.InsertionPoint.y,
-                            TopTTViewEntiti.InsertionPoint.z)
-        TopTTViewEntiti.Update()
+                            TopTTViewEntity.InsertionPoint.z)
+        TopTTViewEntity.Update()
     End Sub
 
     Private Sub TopWDMoving()
@@ -245,32 +502,32 @@ Public Class MovingController
         Dim deltaXFromTopView = movedBlock.InsertionPoint.x - initialX
         Dim deltaYFromTopView = movedBlock.InsertionPoint.y - initialY
 
-        SideViewEntiti.InsertionPoint = New gPoint(
+        SideViewEntity.InsertionPoint = New gPoint(
                              movedBlock.InsertionPoint.x,
-                             SideViewEntiti.InsertionPoint.y,
-                             SideViewEntiti.InsertionPoint.z + deltaYFromTopView)
-        SideViewEntiti.Update()
+                             SideViewEntity.InsertionPoint.y,
+                             SideViewEntity.InsertionPoint.z + deltaYFromTopView)
+        SideViewEntity.Update()
 
-        AftViewEntiti.InsertionPoint = New gPoint(
-                               AftViewEntiti.InsertionPoint.x + deltaYFromTopView,
-                               AftViewEntiti.InsertionPoint.y,
-                               AftViewEntiti.InsertionPoint.z + deltaXFromTopView)
-        AftViewEntiti.Update()
+        AftViewEntity.InsertionPoint = New gPoint(
+                               AftViewEntity.InsertionPoint.x + deltaYFromTopView,
+                               AftViewEntity.InsertionPoint.y,
+                               AftViewEntity.InsertionPoint.z + deltaXFromTopView)
+        AftViewEntity.Update()
 
-        TopTDViewEntiti.InsertionPoint = New gPoint(
+        TopTDViewEntity.InsertionPoint = New gPoint(
                               movedBlock.InsertionPoint.x,
                               movedBlock.InsertionPoint.y,
-                              TopTDViewEntiti.InsertionPoint.z)
-        TopTDViewEntiti.Update()
+                              TopTDViewEntity.InsertionPoint.z)
+        TopTDViewEntity.Update()
 
-        TopTTViewEntiti.InsertionPoint = New gPoint(
+        TopTTViewEntity.InsertionPoint = New gPoint(
                             movedBlock.InsertionPoint.x,
                             movedBlock.InsertionPoint.y,
-                            TopTTViewEntiti.InsertionPoint.z)
-        TopTTViewEntiti.Update()
+                            TopTTViewEntity.InsertionPoint.z)
+        TopTTViewEntity.Update()
     End Sub
 
-    Public Sub moveMirrorBlocks(movedBlock As vdInsert, initialX As Double, initialY As Double, initialZ As Double)
+    Public Sub moveMirrorBlocksOldWay(movedBlock As vdInsert, initialX As Double, initialY As Double, initialZ As Double)
         intializeViewsEntities(movedBlock)
 
 

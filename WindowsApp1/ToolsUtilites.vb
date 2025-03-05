@@ -1,4 +1,5 @@
 ﻿Imports System.Text.RegularExpressions
+Imports VDrawI5
 
 Public Class ToolsUtilites
 
@@ -6,14 +7,14 @@ Public Class ToolsUtilites
     'the code adjusts related "Aft" views to have the Y position match the Side view.
     Public Shared Function StartsWithSU(ByVal input As String) As Boolean
         input = input.ToLower
-        Return input.StartsWith("su", StringComparison.OrdinalIgnoreCase)
+        Return input.StartsWith("su", StringComparison.OrdinalIgnoreCase) OrElse input.StartsWith("sq", StringComparison.OrdinalIgnoreCase)
     End Function
 
     'if the related block is an "Aft" view (identified by the "AU" prefix in the layer name),
     'its X position should be adjusted to match the Y position of the Top view.
     Public Shared Function StartsWithAU(ByVal input As String) As Boolean
         input = input.ToLower
-        Return input.StartsWith("au", StringComparison.OrdinalIgnoreCase)
+        Return input.StartsWith("au", StringComparison.OrdinalIgnoreCase) OrElse input.StartsWith("aq", StringComparison.OrdinalIgnoreCase)
     End Function
 
     'If the moved block is on a layer whose name starts with "U" (indicating a Top view),
@@ -21,7 +22,7 @@ Public Class ToolsUtilites
     'have their insertion points updated accordingly.
     Public Shared Function StartsWithU(ByVal input As String) As Boolean
         input = input.ToLower
-        Return input.StartsWith("u", StringComparison.OrdinalIgnoreCase)
+        Return input.StartsWith("u", StringComparison.OrdinalIgnoreCase) OrElse input.StartsWith("q", StringComparison.OrdinalIgnoreCase)
     End Function
 
     Public Shared Function StartsWithC1U(ByVal input As String) As Boolean
@@ -48,5 +49,41 @@ Public Class ToolsUtilites
         End If
         Return 0 ' Return 0 if no number is found
     End Function
+
+
+    Public Shared Function topWDAltitudeMarkerRecognizer(name As String) As Boolean
+        If String.IsNullOrEmpty(name) Then Return False ' Prevents null reference issues
+        Return name.ToLower().Contains("p130184") ' Checks if "p108" exists anywhere in the string
+    End Function
+
+    Public Shared Function topTDAltitudeMarkerRecognizer(name As String) As Boolean
+        If String.IsNullOrEmpty(name) Then Return False ' Prevents null reference issues
+        Return name.ToLower().Contains("c1p148218") ' Checks if "c1p108" exists anywhere in the string
+    End Function
+
+    Public Shared Function topTTAltitudeMarkerRecognizer(name As String) As Boolean
+        If String.IsNullOrEmpty(name) Then Return False ' Prevents null reference issues
+        Return name.ToLower().Contains("c2p146660") ' Checks if "c2p108" exists anywhere in the string
+    End Function
+
+    Public Shared Function altitudeComperator(inputZ As Double, altitudeMarker As Double) As Boolean
+        Return inputZ >= altitudeMarker
+    End Function
+
+    Public Shared Function topP180Recognizer(name As String) As Boolean
+        If String.IsNullOrEmpty(name) Then Return False ' Prevents null reference issues
+        Return name.ToLower().StartsWith("p108687") ' Checks if "c2p108" exists anywhere in the string
+    End Function
+
+    Public Shared Function topC1P180Recognizer(name As String) As Boolean
+        If String.IsNullOrEmpty(name) Then Return False ' Prevents null reference issues
+        Return name.ToLower().StartsWith("c1p108694") ' Checks if "c2p108" exists anywhere in the string
+    End Function
+
+    Public Shared Function topC2P180Recognizer(name As String) As Boolean
+        If String.IsNullOrEmpty(name) Then Return False ' Prevents null reference issues
+        Return name.ToLower().StartsWith("c2p108694") ' Checks if "c2p108" exists anywhere in the string
+    End Function
+
 
 End Class
