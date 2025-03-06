@@ -29,13 +29,15 @@ Partial Class Form1
         Me.ButOpen = New System.Windows.Forms.Button()
         Me.ButtonSave = New System.Windows.Forms.Button()
         Me.CheckBoxGravity = New System.Windows.Forms.CheckBox()
-        Me.massageBox = New System.Windows.Forms.TextBox()
+        Me.massageBoxWindow = New System.Windows.Forms.TextBox()
         Me.btnMirrirOff = New System.Windows.Forms.CheckBox()
         Me.Button_Undo = New System.Windows.Forms.Button()
         Me.Button_Redo = New System.Windows.Forms.Button()
         Me.MenuStrip1 = New System.Windows.Forms.MenuStrip()
         Me.Button_Print = New System.Windows.Forms.Button()
         Me.CheckBox_Delete = New System.Windows.Forms.CheckBox()
+        Me.DataGridView1 = New System.Windows.Forms.DataGridView()
+        CType(Me.DataGridView1, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
         'VdFramedControl
@@ -45,7 +47,7 @@ Partial Class Form1
         Me.VdFramedControl.HistoryLines = CType(3UI, UInteger)
         Me.VdFramedControl.LoadCommandstxt = True
         Me.VdFramedControl.LoadMenutxt = True
-        Me.VdFramedControl.Location = New System.Drawing.Point(0, 100)
+        Me.VdFramedControl.Location = New System.Drawing.Point(0, 150)
         Me.VdFramedControl.Name = "VdFramedControl"
         Me.VdFramedControl.PropertyGridWidth = CType(300UI, UInteger)
         Me.VdFramedControl.Size = New System.Drawing.Size(1900, 900)
@@ -79,13 +81,13 @@ Partial Class Form1
         Me.CheckBoxGravity.Text = "Gravity"
         Me.CheckBoxGravity.UseVisualStyleBackColor = True
         '
-        'massageBox
+        'massageBoxWindow
         '
-        Me.massageBox.Location = New System.Drawing.Point(193, 12)
-        Me.massageBox.Multiline = True
-        Me.massageBox.Name = "massageBox"
-        Me.massageBox.Size = New System.Drawing.Size(520, 84)
-        Me.massageBox.TabIndex = 8
+        Me.massageBoxWindow.Location = New System.Drawing.Point(1057, 104)
+        Me.massageBoxWindow.Multiline = True
+        Me.massageBoxWindow.Name = "massageBoxWindow"
+        Me.massageBoxWindow.Size = New System.Drawing.Size(280, 29)
+        Me.massageBoxWindow.TabIndex = 8
         '
         'btnMirrirOff
         '
@@ -99,7 +101,7 @@ Partial Class Form1
         '
         'Button_Undo
         '
-        Me.Button_Undo.Location = New System.Drawing.Point(732, 12)
+        Me.Button_Undo.Location = New System.Drawing.Point(1057, 14)
         Me.Button_Undo.Name = "Button_Undo"
         Me.Button_Undo.Size = New System.Drawing.Size(75, 37)
         Me.Button_Undo.TabIndex = 10
@@ -108,7 +110,7 @@ Partial Class Form1
         '
         'Button_Redo
         '
-        Me.Button_Redo.Location = New System.Drawing.Point(732, 55)
+        Me.Button_Redo.Location = New System.Drawing.Point(1057, 57)
         Me.Button_Redo.Name = "Button_Redo"
         Me.Button_Redo.Size = New System.Drawing.Size(75, 41)
         Me.Button_Redo.TabIndex = 11
@@ -135,24 +137,33 @@ Partial Class Form1
         'CheckBox_Delete
         '
         Me.CheckBox_Delete.AutoSize = True
-        Me.CheckBox_Delete.Location = New System.Drawing.Point(822, 14)
+        Me.CheckBox_Delete.Location = New System.Drawing.Point(1138, 25)
         Me.CheckBox_Delete.Name = "CheckBox_Delete"
         Me.CheckBox_Delete.Size = New System.Drawing.Size(57, 17)
         Me.CheckBox_Delete.TabIndex = 15
         Me.CheckBox_Delete.Text = "Delete"
         Me.CheckBox_Delete.UseVisualStyleBackColor = True
         '
+        'DataGridView1
+        '
+        Me.DataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize
+        Me.DataGridView1.Location = New System.Drawing.Point(203, 12)
+        Me.DataGridView1.Name = "DataGridView1"
+        Me.DataGridView1.Size = New System.Drawing.Size(848, 132)
+        Me.DataGridView1.TabIndex = 16
+        '
         'Form1
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(1920, 1080)
+        Me.Controls.Add(Me.DataGridView1)
         Me.Controls.Add(Me.CheckBox_Delete)
         Me.Controls.Add(Me.Button_Print)
         Me.Controls.Add(Me.Button_Redo)
         Me.Controls.Add(Me.Button_Undo)
         Me.Controls.Add(Me.btnMirrirOff)
-        Me.Controls.Add(Me.massageBox)
+        Me.Controls.Add(Me.massageBoxWindow)
         Me.Controls.Add(Me.CheckBoxGravity)
         Me.Controls.Add(Me.ButtonSave)
         Me.Controls.Add(Me.ButOpen)
@@ -162,6 +173,7 @@ Partial Class Form1
         Me.Name = "Form1"
         Me.Text = "Form1"
         Me.WindowState = System.Windows.Forms.FormWindowState.Maximized
+        CType(Me.DataGridView1, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -173,11 +185,12 @@ Partial Class Form1
     Friend WithEvents ButOpen As System.Windows.Forms.Button
     Friend WithEvents ButtonSave As System.Windows.Forms.Button
     Friend WithEvents CheckBoxGravity As CheckBox
-    Friend WithEvents massageBox As TextBox
+    Friend WithEvents massageBoxWindow As TextBox
     Friend WithEvents btnMirrirOff As CheckBox
     Friend WithEvents Button_Undo As System.Windows.Forms.Button
     Friend WithEvents Button_Redo As System.Windows.Forms.Button
     Friend WithEvents MenuStrip1 As MenuStrip
     Friend WithEvents Button_Print As System.Windows.Forms.Button
     Friend WithEvents CheckBox_Delete As CheckBox
+    Friend WithEvents DataGridView1 As DataGridView
 End Class

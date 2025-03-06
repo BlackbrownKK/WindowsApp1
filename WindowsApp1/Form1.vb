@@ -22,6 +22,7 @@ Public Class Form1
         ShowActionEntities = False
         GravityMod = CheckBoxGravity.Checked
         MovingCtrl = New MovingController(Doc) ' Initialize MovingController
+        MovingCtrl.PopulateTable(DataGridView1)
     End Sub
 
 
@@ -55,9 +56,8 @@ Public Class Form1
 
 
 
-                TextMassage = $"Before moving: X: {chosenBlock.InsertionPoint.x} , Y: {chosenBlock.InsertionPoint.y}, Z: {chosenBlock.InsertionPoint.z}"
-
                 Doc.CommandAction.CmdMove(selection, chosenBlock.InsertionPoint, Nothing)
+                chosenBlock.InsertionPoint.z = initialZofAftView
                 ' If GravityMod is True, get the adjusted Y position using GetGravityPoint
                 If GravityMod AndAlso ToolsUtilites.StartsWithSU(chosenBlock.Layer.Name.ToString) Then ' for GravityMod is on
                     Dim adjustedY As Double = GetGravityPoint(chosenBlock)
@@ -66,13 +66,15 @@ Public Class Form1
 
                 If Not btnMirrirOff.Checked Then
                     MovingCtrl.moveMirrorBlocks(chosenBlock, initialXofAftView, initialYofAftView, initialZofAftView)
-                    TextMassage += $"{Environment.NewLine} After moving: X: {chosenBlock.InsertionPoint.x}, Y: {chosenBlock.InsertionPoint.y}, Z: {chosenBlock.InsertionPoint.z}, {Environment.NewLine}{MovingCtrl.MessageBoxText()}"
-                    massageBox.Text = TextMassage
                     Doc.Redraw(True)
                 End If
             End If
 
+
+
         End Using
+        massageBoxWindow.Text = MovingCtrl.TowViewMassage
+        MovingCtrl.PopulateTable(DataGridView1)
     End Sub
 
 
@@ -109,19 +111,25 @@ Public Class Form1
 
 
     Private Sub Button2_Click_1(sender As Object, e As EventArgs) Handles ButOpen.Click
+
         ' Create and configure an OpenFileDialog instance.
         Dim openFileDialog As New OpenFileDialog()
         openFileDialog.Filter = "VectorDraw Files|*.vdcl;*.dwg;*.dxf;*.vdml;"
         openFileDialog.Title = "Open VectorDraw File"
 
         If openFileDialog.ShowDialog() = DialogResult.OK Then
+
+            ' Open the selected file
             If Doc.Open(openFileDialog.FileName) Then
                 Doc.Redraw(True)
             Else
-                MessageBox.Show("Failed to open file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                ' Show error message if file failed to open
             End If
         End If
+
     End Sub
+
+
 
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles ButtonSave.Click
         Dim saveFileDialog As New SaveFileDialog()
@@ -154,13 +162,7 @@ Public Class Form1
 
     End Sub
 
-    Private Sub massageBox_TextChanged(sender As Object, e As EventArgs) Handles massageBox.TextChanged
-        ' Disable the event temporarily to prevent feedback loop
-        RemoveHandler massageBox.TextChanged, AddressOf massageBox_TextChanged
-        massageBox.Text = TextMassage
-        ' Re-enable the event after updating the text
-        AddHandler massageBox.TextChanged, AddressOf massageBox_TextChanged
-    End Sub
+
 
     Private Sub btnMirrirOff_CheckedChanged(sender As Object, e As EventArgs) Handles btnMirrirOff.CheckedChanged
 
@@ -182,6 +184,14 @@ Public Class Form1
     End Sub
 
     Private Sub CheckBox1_CheckedChanged(sender As Object, e As EventArgs) Handles CheckBox_Delete.CheckedChanged
+
+    End Sub
+
+    Private Sub DataGridView1_CellContentClick(sender As Object, e As DataGridViewCellEventArgs) Handles DataGridView1.CellContentClick
+
+    End Sub
+
+    Private Sub massageBoxWindow_TextChanged(sender As Object, e As EventArgs) Handles massageBoxWindow.TextChanged
 
     End Sub
 End Class

@@ -2,7 +2,7 @@
 Imports vdInsert = VectorDraw.Professional.vdFigures.vdInsert
 Imports vdFigure = VectorDraw.Professional.vdPrimaries.vdFigure
 Imports vdEntities = VectorDraw.Professional.vdCollections.vdEntities
-Imports VectorDraw.Professional.vdObjects
+Imports System.Text
 
 
 
@@ -18,20 +18,45 @@ Public Class MovingController
     Dim TopTTViewEntity As vdInsert
     Dim AftViewEntity As vdInsert
 
+    Dim initialXOfSideViewEntity As Double
+    Dim initialYOfSideViewEntity As Double
+    Dim initialZOfSideViewEntity As Double
+
+    Dim initialXOfTopWDViewEntity As Double
+    Dim initialYOfTopWDViewEntity As Double
+    Dim initialZOfTopWDViewEntity As Double
+
+    Dim initialXOfTopTDViewEntity As Double
+    Dim initialYOfTopTDViewEntity As Double
+    Dim initialZOfTopTDViewEntity As Double
+
+    Dim initialXOfTopTTViewEntity As Double
+    Dim initialYOfTopTTViewEntity As Double
+    Dim initialZOfTopTTViewEntity As Double
+
+    Dim initialXOfAftViewEntity As Double
+    Dim initialYOfAftViewEntity As Double
+    Dim initialZOfAftViewEntity As Double
+
+
+
+
     Dim P180 As vdInsert
     Dim C1P180 As vdInsert
     Dim C2P180 As vdInsert
-
 
     Dim TopWDAltitudeMarker As Double
     Dim TopTDAltitudeMarker As Double
     Dim TopTTAltitudeMarker As Double
 
 
-    Dim TowViewMassage As String
-    Dim initialX As Double
-    Dim initialY As Double
-    Dim initialZ As Double
+    Public TowViewMassage As String
+
+    Dim initialXOfMovedBlock As Double
+    Dim initialYOfMovedBlock As Double
+    Dim initialZOfMovedBlock As Double
+
+
 
     Dim movedBlock As vdInsert
     Dim AllEntityes As vdEntities
@@ -42,6 +67,45 @@ Public Class MovingController
         Me.Doc = document
     End Sub
 
+    Public Sub moveMirrorBlocks(movedBlock As vdInsert, initialX As Double, initialY As Double, initialZ As Double)
+        intializeViewsEntities(movedBlock)
+
+        Me.initialXOfMovedBlock = initialX
+        Me.initialYOfMovedBlock = initialY
+        Me.initialZOfMovedBlock = initialZ
+
+
+        If movedBlock.Equals(TopWDViewEntity) Then
+            initialXOfTopWDViewEntity = initialX
+            initialYOfTopWDViewEntity = initialY
+            initialZOfTopWDViewEntity = initialZ
+            TopWDMoving()
+
+        ElseIf movedBlock.Equals(TopTDViewEntity) Then
+            initialXOfTopTDViewEntity = initialX
+            initialYOfTopTDViewEntity = initialY
+            initialZOfTopTDViewEntity = initialZ
+            TopTDMoving()
+        ElseIf movedBlock.Equals(TopTTViewEntity) Then
+            initialXOfTopTTViewEntity = initialX
+            initialYOfTopTTViewEntity = initialY
+            initialZOfTopTTViewEntity = initialZ
+            TopTTMoving()
+        ElseIf movedBlock.Equals(SideViewEntity) Then
+            initialXOfSideViewEntity = initialX
+            initialYOfSideViewEntity = initialY
+            initialZOfSideViewEntity = initialZ
+            SideViewMoving()
+        ElseIf movedBlock.Equals(AftViewEntity) Then
+            initialXOfAftViewEntity = initialX
+            initialYOfAftViewEntity = initialY
+            initialZOfAftViewEntity = initialZ
+            AftViewMoving()
+        End If
+
+        VisibleOnForAllViews()
+
+    End Sub
 
     Private Sub intializeViewsEntities(movedBlock As vdInsert)
 
@@ -50,66 +114,65 @@ Public Class MovingController
         ' getting the Layer name from the moved block's name
         Dim LayerNumber As String = ToolsUtilites.getLayerNumber(movedBlock.Layer.Name).ToString
         ' getting the Layer number from the moved block's name
-        Dim movedLayerNumber As Integer = ToolsUtilites.getLayerNumber(movedBlock.Layer.Name)
+
 
         Me.AllEntityes = Doc.ActiveLayOut.Entities
 
         For Each otherViewsEntity As vdFigure In AllEntityes
             If TypeOf otherViewsEntity Is vdInsert Then
                 Dim tempEntity As vdInsert = CType(otherViewsEntity, vdInsert)
-
                 Select Case True
                     Case ToolsUtilites.topWDAltitudeMarkerRecognizer(tempEntity.Layer.ToString)
                         TopWDAltitudeMarker = tempEntity.InsertionPoint.z
-
                     Case ToolsUtilites.topTDAltitudeMarkerRecognizer(tempEntity.Layer.ToString)
                         TopTDAltitudeMarker = tempEntity.InsertionPoint.z
-
                     Case ToolsUtilites.topTTAltitudeMarkerRecognizer(tempEntity.Layer.ToString)
                         TopTTAltitudeMarker = tempEntity.InsertionPoint.z
-
                     Case ToolsUtilites.topP180Recognizer(tempEntity.Layer.Name)
                         P180 = tempEntity
-
                     Case ToolsUtilites.topC1P180Recognizer(tempEntity.Layer.Name)
                         C1P180 = tempEntity
-
                     Case ToolsUtilites.topC2P180Recognizer(tempEntity.Layer.Name)
                         C2P180 = tempEntity
-
                 End Select
 
-
-
-                ' * For Each entity getting Layer number
-                Dim otherViewsEntityLayerNumber As Integer = ToolsUtilites.getLayerNumber(tempEntity.Layer.Name)
-                If otherViewsEntity.Layer.Name.Contains(LayerNumber) AndAlso otherViewsEntityLayerNumber = movedLayerNumber Then
-
+                ' * For Each entity check Layer number
+                If otherViewsEntity.Layer.Name.Contains(LayerNumber) Then
                     Select Case True
                         Case ToolsUtilites.StartsWithSU(tempEntity.Layer.ToString)
                             SideViewEntity = tempEntity
+                            initialXOfSideViewEntity = tempEntity.InsertionPoint.x
+                            initialYOfSideViewEntity = tempEntity.InsertionPoint.y
+                            initialZOfSideViewEntity = tempEntity.InsertionPoint.z
 
                         Case ToolsUtilites.StartsWithU(tempEntity.Layer.ToString)
                             TopWDViewEntity = tempEntity
+                            initialXOfTopWDViewEntity = tempEntity.InsertionPoint.x
+                            initialYOfTopWDViewEntity = tempEntity.InsertionPoint.y
+                            initialZOfTopWDViewEntity = tempEntity.InsertionPoint.z
 
                         Case ToolsUtilites.StartsWithC1U(tempEntity.Layer.ToString)
                             TopTDViewEntity = tempEntity
+                            initialXOfTopTDViewEntity = tempEntity.InsertionPoint.x
+                            initialYOfTopTDViewEntity = tempEntity.InsertionPoint.y
+                            initialZOfTopTDViewEntity = tempEntity.InsertionPoint.z
 
                         Case ToolsUtilites.StartsWithC2U(tempEntity.Layer.ToString)
                             TopTTViewEntity = tempEntity
+                            initialXOfTopTTViewEntity = tempEntity.InsertionPoint.x
+                            initialYOfTopTTViewEntity = tempEntity.InsertionPoint.y
+                            initialZOfTopTTViewEntity = tempEntity.InsertionPoint.z
 
                         Case ToolsUtilites.StartsWithAU(tempEntity.Layer.ToString)
                             AftViewEntity = tempEntity
-
-
+                            initialXOfAftViewEntity = tempEntity.InsertionPoint.x
+                            initialYOfAftViewEntity = tempEntity.InsertionPoint.y
+                            initialZOfAftViewEntity = tempEntity.InsertionPoint.z
                         Case Else
-
                     End Select
-
                 End If
             End If
         Next
-
 
 
         If TopTDViewEntity Is Nothing AndAlso TopWDViewEntity IsNot Nothing Then
@@ -232,40 +295,7 @@ Public Class MovingController
         Debug.WriteLine("TopTD Layer name is" + TopTDViewEntity.Layer.Name)
         Debug.WriteLine("TopTT Layer name is" + TopTTViewEntity.Layer.Name)
         Debug.WriteLine("Aft Layer name is" + AftViewEntity.Layer.Name)
-
-
-
-
-
     End Sub
-
-
-
-
-    Public Sub moveMirrorBlocks(movedBlock As vdInsert, initialX As Double, initialY As Double, initialZ As Double)
-        intializeViewsEntities(movedBlock)
-
-        Me.initialX = initialX
-        Me.initialY = initialY
-        Me.initialZ = initialZ
-
-
-        If movedBlock.Equals(TopWDViewEntity) Then
-            TopWDMoving()
-        ElseIf movedBlock.Equals(TopTDViewEntity) Then
-            TopTDMoving()
-        ElseIf movedBlock.Equals(TopTTViewEntity) Then
-            TopTTMoving()
-        ElseIf movedBlock.Equals(SideViewEntity) Then
-            SideViewMoving()
-        ElseIf movedBlock.Equals(AftViewEntity) Then
-            AftViewMoving()
-        End If
-
-        VisibleOnForAllViews()
-
-    End Sub
-
     Private Sub VisibleOnForAllViews()
         'Debug.WriteLine("x:" + movedBlock.InsertionPoint.x.ToString + " y:" + movedBlock.InsertionPoint.y.ToString + " z:" + movedBlock.InsertionPoint.z.ToString)
         Try
@@ -371,13 +401,202 @@ Public Class MovingController
 
 
     Public Function MessageBoxText() As String
+        Dim sb As New StringBuilder()
+        Dim format As String = "{0,-7},{1,-12},{2,8:F0},{3,8:F0},{4,8:F0},-,{5,8:F0},{6,8:F0},{7,8:F0},|,{8,7:F0},{9,7:F0},{10,7:F0}"
+
+        sb.AppendLine()
+        sb.AppendLine("View,Layer Name,X,Y,Z,-,X,Y,Z,|,ΔX,ΔY,ΔZ")
+ 
+        If TopWDViewEntity IsNot Nothing Then
+            sb.AppendLine(String.Format(format, "Top WD", TopWDViewEntity.Layer.Name,
+            initialXOfTopWDViewEntity, initialYOfTopWDViewEntity, initialZOfTopWDViewEntity,
+            TopWDViewEntity.InsertionPoint.x, TopWDViewEntity.InsertionPoint.y, TopWDViewEntity.InsertionPoint.z,
+            TopWDViewEntity.InsertionPoint.x - initialXOfTopWDViewEntity,
+            TopWDViewEntity.InsertionPoint.y - initialYOfTopWDViewEntity,
+            TopWDViewEntity.InsertionPoint.z - initialZOfTopWDViewEntity))
+        End If
+
+        If TopTDViewEntity IsNot Nothing Then
+            sb.AppendLine(String.Format(format, "Top TD", TopTDViewEntity.Layer.Name,
+            initialXOfTopTDViewEntity, initialYOfTopTDViewEntity, initialZOfTopTDViewEntity,
+            TopTDViewEntity.InsertionPoint.x, TopTDViewEntity.InsertionPoint.y, TopTDViewEntity.InsertionPoint.z,
+            TopTDViewEntity.InsertionPoint.x - initialXOfTopTDViewEntity,
+            TopTDViewEntity.InsertionPoint.y - initialYOfTopTDViewEntity,
+            TopTDViewEntity.InsertionPoint.z - initialZOfTopTDViewEntity))
+        End If
+
+        If TopTTViewEntity IsNot Nothing Then
+            sb.AppendLine(String.Format(format, "Top TT", TopTTViewEntity.Layer.Name,
+            initialXOfTopTTViewEntity, initialYOfTopTTViewEntity, initialZOfTopTTViewEntity,
+            TopTTViewEntity.InsertionPoint.x, TopTTViewEntity.InsertionPoint.y, TopTTViewEntity.InsertionPoint.z,
+            TopTTViewEntity.InsertionPoint.x - initialXOfTopTTViewEntity,
+            TopTTViewEntity.InsertionPoint.y - initialYOfTopTTViewEntity,
+            TopTTViewEntity.InsertionPoint.z - initialZOfTopTTViewEntity))
+        End If
+
+        If SideViewEntity IsNot Nothing Then
+            sb.AppendLine(String.Format(format, "Top S", SideViewEntity.Layer.Name,
+            initialXOfSideViewEntity, initialYOfSideViewEntity, initialZOfSideViewEntity,
+            SideViewEntity.InsertionPoint.x, SideViewEntity.InsertionPoint.y, SideViewEntity.InsertionPoint.z,
+            SideViewEntity.InsertionPoint.x - initialXOfSideViewEntity,
+            SideViewEntity.InsertionPoint.y - initialYOfSideViewEntity,
+            SideViewEntity.InsertionPoint.z - initialZOfSideViewEntity))
+        End If
+
+        If AftViewEntity IsNot Nothing Then
+            sb.AppendLine(String.Format(format, "Top A", AftViewEntity.Layer.Name,
+            initialXOfAftViewEntity, initialYOfAftViewEntity, initialZOfAftViewEntity,
+            AftViewEntity.InsertionPoint.x, AftViewEntity.InsertionPoint.y, AftViewEntity.InsertionPoint.z,
+            AftViewEntity.InsertionPoint.x - initialXOfAftViewEntity,
+            AftViewEntity.InsertionPoint.y - initialYOfAftViewEntity,
+            AftViewEntity.InsertionPoint.z - initialZOfAftViewEntity))
+        End If
+
+
         Return TowViewMassage
     End Function
 
 
+    Public Sub PopulateTable(ByRef View As DataGridView)
+        ' Clear any existing data
+        View.Columns.Clear()
+        View.Rows.Clear()
+
+
+        ' Define columns
+        View.Columns.Add("View", "View")
+        View.Columns.Add("Layer Name", "Layer Name")
+        View.Columns.Add("X Before", "X Before")
+        View.Columns.Add("Y Before", "Y Before")
+        View.Columns.Add("Z Before", "Z Before")
+        View.Columns.Add("-", "-") ' Separator
+        View.Columns.Add("X After", "X After")
+        View.Columns.Add("Y After", "Y After")
+        View.Columns.Add("Z After", "Z After")
+        View.Columns.Add("|", "|") ' Separator
+        View.Columns.Add("ΔX", "ΔX")
+        View.Columns.Add("ΔY", "ΔY")
+        View.Columns.Add("ΔZ", "ΔZ")
+
+        If TopWDViewEntity IsNot Nothing Then
+            ' Add WD rows
+            View.Rows.Add("Top WD",
+                      TopWDViewEntity.Layer.Name,
+                      CInt(initialXOfTopWDViewEntity),
+                      CInt(initialYOfTopWDViewEntity),
+                      CInt(initialZOfTopWDViewEntity),
+                      "-",
+                      CInt(TopWDViewEntity.InsertionPoint.x),
+                      CInt(TopWDViewEntity.InsertionPoint.y),
+                      CInt(TopWDViewEntity.InsertionPoint.z),
+                      "-",
+                       CInt(TopWDViewEntity.InsertionPoint.x - initialXOfTopWDViewEntity),
+                       CInt(TopWDViewEntity.InsertionPoint.y - initialYOfTopWDViewEntity),
+                       CInt(TopWDViewEntity.InsertionPoint.z - initialZOfTopWDViewEntity)
+                       )
+
+            ' Auto-size columns for better readability
+            View.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells
+            View.Refresh()
+        End If
+
+        If TopTDViewEntity IsNot Nothing Then
+            ' Add TD rows
+            View.Rows.Add("Top TD",
+                      TopTDViewEntity.Layer.Name,
+                      CInt(initialXOfTopTDViewEntity),
+                      CInt(initialYOfTopTDViewEntity),
+                      CInt(initialZOfTopTDViewEntity),
+                      "-",
+                      CInt(TopTDViewEntity.InsertionPoint.x),
+                      CInt(TopTDViewEntity.InsertionPoint.y),
+                      CInt(TopTDViewEntity.InsertionPoint.z),
+                      "-",
+                       CInt(TopTDViewEntity.InsertionPoint.x - initialXOfTopTDViewEntity),
+                       CInt(TopTDViewEntity.InsertionPoint.y - initialYOfTopTDViewEntity),
+                       CInt(TopTDViewEntity.InsertionPoint.z - initialZOfTopTDViewEntity)
+                       )
+
+            ' Auto-size columns for better readability
+            View.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells
+            View.Refresh()
+        End If
+
+        If TopTTViewEntity IsNot Nothing Then
+            ' Add TT rows
+            View.Rows.Add("Top TT",
+                      TopTTViewEntity.Layer.Name,
+                      CInt(initialXOfTopTTViewEntity),
+                      CInt(initialYOfTopTTViewEntity),
+                      CInt(initialZOfTopTTViewEntity),
+                      "-",
+                      CInt(TopTTViewEntity.InsertionPoint.x),
+                      CInt(TopTTViewEntity.InsertionPoint.y),
+                      CInt(TopTTViewEntity.InsertionPoint.z),
+                      "-",
+                       CInt(TopTTViewEntity.InsertionPoint.x - initialXOfTopTTViewEntity),
+                       CInt(TopTTViewEntity.InsertionPoint.y - initialYOfTopTTViewEntity),
+                       CInt(TopTTViewEntity.InsertionPoint.z - initialZOfTopTTViewEntity)
+                       )
+
+            ' Auto-size columns for better readability
+            View.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells
+            View.Refresh()
+        End If
+
+        If SideViewEntity IsNot Nothing Then
+            ' Add S rows
+            View.Rows.Add("Side",
+                      SideViewEntity.Layer.Name,
+                      CInt(initialXOfSideViewEntity),
+                      CInt(initialYOfSideViewEntity),
+                      CInt(initialZOfSideViewEntity),
+                      "-",
+                      CInt(SideViewEntity.InsertionPoint.x),
+                      CInt(SideViewEntity.InsertionPoint.y),
+                      CInt(SideViewEntity.InsertionPoint.z),
+                      "-",
+                       CInt(SideViewEntity.InsertionPoint.x - initialXOfSideViewEntity),
+                       CInt(SideViewEntity.InsertionPoint.y - initialYOfSideViewEntity),
+                       CInt(SideViewEntity.InsertionPoint.z - initialZOfSideViewEntity)
+                       )
+
+            ' Auto-size columns for better readability
+            View.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells
+            View.Refresh()
+        End If
+
+        If AftViewEntity IsNot Nothing Then
+            ' Add A rows
+            View.Rows.Add("AFT",
+                      TopWDViewEntity.Layer.Name,
+                      CInt(initialXOfAftViewEntity),
+                      CInt(initialYOfAftViewEntity),
+                      CInt(initialZOfAftViewEntity),
+                      "-",
+                      CInt(AftViewEntity.InsertionPoint.x),
+                      CInt(AftViewEntity.InsertionPoint.y),
+                      CInt(AftViewEntity.InsertionPoint.z),
+                      "-",
+                       CInt(AftViewEntity.InsertionPoint.x - initialXOfAftViewEntity),
+                       CInt(AftViewEntity.InsertionPoint.y - initialYOfAftViewEntity),
+                       CInt(AftViewEntity.InsertionPoint.z - initialZOfAftViewEntity)
+                       )
+
+            ' Auto-size columns for better readability
+            View.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells
+            View.Refresh()
+        End If
+
+
+    End Sub
+    'TowViewMassage = sb.ToString()
+    'Return TowViewMassage
+
+
     Private Sub AftViewMoving()
-        Dim deltaYFromTopView = movedBlock.InsertionPoint.y - initialY
-        Dim deltaXFromTopView = movedBlock.InsertionPoint.x - initialX
+        Dim deltaYFromTopView = movedBlock.InsertionPoint.y - initialYOfMovedBlock
+        Dim deltaXFromTopView = movedBlock.InsertionPoint.x - initialXOfMovedBlock
 
         SideViewEntity.InsertionPoint = New gPoint(
                          SideViewEntity.InsertionPoint.x,
@@ -407,8 +626,8 @@ Public Class MovingController
     End Sub
 
     Private Sub SideViewMoving()
-        Dim deltaYFromTopView = movedBlock.InsertionPoint.y - initialY
-        Dim deltaXFromTopView = movedBlock.InsertionPoint.x - initialX
+        Dim deltaYFromTopView = movedBlock.InsertionPoint.y - initialYOfMovedBlock
+        Dim deltaXFromTopView = movedBlock.InsertionPoint.x - initialXOfMovedBlock
 
         AftViewEntity.InsertionPoint = New gPoint(
                                 AftViewEntity.InsertionPoint.x,
@@ -439,8 +658,8 @@ Public Class MovingController
     End Sub
 
     Private Sub TopTTMoving()
-        Dim deltaXFromTopView = movedBlock.InsertionPoint.x - initialX
-        Dim deltaYFromTopView = movedBlock.InsertionPoint.y - initialY
+        Dim deltaXFromTopView = movedBlock.InsertionPoint.x - initialXOfMovedBlock
+        Dim deltaYFromTopView = movedBlock.InsertionPoint.y - initialYOfMovedBlock
 
         SideViewEntity.InsertionPoint = New gPoint(
                              movedBlock.InsertionPoint.x,
@@ -469,8 +688,8 @@ Public Class MovingController
 
     Private Sub TopTDMoving()
 
-        Dim deltaXFromTopView = movedBlock.InsertionPoint.x - initialX
-        Dim deltaYFromTopView = movedBlock.InsertionPoint.y - initialY
+        Dim deltaXFromTopView = movedBlock.InsertionPoint.x - initialXOfMovedBlock
+        Dim deltaYFromTopView = movedBlock.InsertionPoint.y - initialYOfMovedBlock
 
         SideViewEntity.InsertionPoint = New gPoint(
                              movedBlock.InsertionPoint.x,
@@ -499,8 +718,8 @@ Public Class MovingController
 
     Private Sub TopWDMoving()
 
-        Dim deltaXFromTopView = movedBlock.InsertionPoint.x - initialX
-        Dim deltaYFromTopView = movedBlock.InsertionPoint.y - initialY
+        Dim deltaXFromTopView = movedBlock.InsertionPoint.x - initialXOfMovedBlock
+        Dim deltaYFromTopView = movedBlock.InsertionPoint.y - initialYOfMovedBlock
 
         SideViewEntity.InsertionPoint = New gPoint(
                              movedBlock.InsertionPoint.x,
